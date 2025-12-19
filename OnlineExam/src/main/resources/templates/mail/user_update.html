@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" dir="rtl" lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>به‌روزرسانی اطلاعات حساب کاربری</title>
+    <style>
+        body {
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            direction: rtl;
+            text-align: right;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .content p {
+            line-height: 1.8;
+            color: #333;
+            margin: 15px 0;
+        }
+        .info-box {
+            background-color: #f8f9fa;
+            border-right: 4px solid #f5576c;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .info-box strong {
+            color: #f5576c;
+        }
+        .changes-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .changes-table th,
+        .changes-table td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+        .changes-table th {
+            background-color: #f5576c;
+            color: white;
+            font-weight: bold;
+        }
+        .changes-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        .old-value {
+            color: #dc3545;
+            text-decoration: line-through;
+        }
+        .new-value {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .arrow {
+            color: #6c757d;
+            margin: 0 10px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #f5576c;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .button:hover {
+            background-color: #e0445a;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body dir="rtl">
+    <div class="container">
+        <div class="header">
+            <h1>📝 به‌روزرسانی اطلاعات حساب کاربری</h1>
+        </div>
+        <div class="content">
+            <p>سلام <strong th:text="${user.firstName + ' ' + user.lastName}">کاربر گرامی</strong>،</p>
+            
+            <p>اطلاعات حساب کاربری شما در سیستم مدیریت آزمون آنلاین توسط مدیر سیستم <strong>به‌روزرسانی شده است</strong>.</p>
+            
+            <div class="info-box" th:if="${user.username != null}">
+                <p><strong>نام کاربری:</strong> <span th:text="${user.username}"></span></p>
+            </div>
+            
+            <p><strong>فیلدهای تغییر یافته:</strong></p>
+            
+            <table class="changes-table">
+                <thead>
+                    <tr>
+                        <th>فیلد</th>
+                        <th>مقدار قبلی</th>
+                        <th>مقدار جدید</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="change : ${changes.changes}">
+                        <td><strong th:text="${change.key}"></strong></td>
+                        <td>
+                            <span class="old-value" th:text="${change.value.oldValue}"></span>
+                        </td>
+                        <td>
+                            <span class="new-value" th:text="${change.value.newValue}"></span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div th:if="${changes.passwordChanged}" class="info-box" style="border-right-color: #dc3545; background-color: #fff3cd;">
+                <p style="color: #856404; margin: 0;">
+                    <strong>⚠️ توجه:</strong> رمز عبور شما توسط مدیر سیستم تغییر کرده است. 
+                    به دلایل امنیتی، لطفاً از طریق <a th:href="@{|${baseUrl}/forgot-password|}" style="color: #dc3545;">فراموشی رمز عبور</a> 
+                    اقدام به تعیین رمز عبور جدید نمایید.
+                </p>
+            </div>
+            
+            <p>در صورت بروز هرگونه مشکل یا سوال، لطفاً با پشتیبانی تماس بگیرید.</p>
+            
+            <p style="text-align: center;">
+                <a th:href="@{|${baseUrl}/login|}" class="button">ورود به سیستم</a>
+            </p>
+        </div>
+        <div class="footer">
+            <p>این ایمیل به صورت خودکار ارسال شده است. لطفاً به آن پاسخ ندهید.</p>
+            <p th:text="${applicationTitle}">سیستم مدیریت آزمون آنلاین</p>
+        </div>
+    </div>
+</body>
+</html>

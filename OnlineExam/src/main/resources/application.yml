@@ -1,0 +1,45 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/online_exam_db
+    username: postgres
+    password: 1375
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: mahsamohamadzadeh788@gmail.com
+    password: gcqa cmym yone kgya
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connection timeout: 5000
+          timeout: 5000
+          write timeout: 5000
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+
+server:
+  port: 8069
+  servlet:
+    session:
+      timeout: 30m
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+
