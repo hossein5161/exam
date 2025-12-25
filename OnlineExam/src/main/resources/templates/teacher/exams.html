@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:with="currentLang=${#locale != null ? #locale.language : 'en'}"
+      th:attr="dir=${currentLang == 'fa' ? 'rtl' : 'ltr'}, lang=${currentLang}">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{exams.list}">Exams</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            text-align: start;
+        }
+    </style>
+</head>
+<body>
+    <div style="position: fixed; top: 15px; right: 15px; z-index: 1100;">
+        <div th:replace="~{fragments/language-selector :: language-selector}"></div>
+    </div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#" th:text="#{application.title}">Online Exam Management System</a>
+            <div class="navbar-nav me-auto">
+                <a class="nav-link" th:href="@{/teacher/courses}" th:text="#{common.back}">Back</a>
+                <form th:action="@{/logout}" method="post" class="d-inline me-2">
+                    <button type="submit" class="btn btn-outline-light" th:text="#{common.logout}">Logout</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><span th:text="#{exams.list}">Exams</span>: <span th:text="${course.title}"></span></h2>
+                <p class="text-muted"><span th:text="#{courses.courseCode}">Course Code</span>: <span th:text="${course.courseCode}"></span></p>
+            </div>
+            <a th:href="@{/teacher/courses/{id}/exams/new(id=${course.id})}" class="btn btn-primary" th:text="#{exams.add}">Add New Exam</a>
+        </div>
+        
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <div class="card">
+            <div class="card-header" th:text="#{exams.list}">Exam List</div>
+            <div class="card-body">
+                <div th:if="${exams != null && !exams.isEmpty()}">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th th:text="#{exams.title}">Title</th>
+                                <th th:text="#{exams.description}">Description</th>
+                                <th th:text="#{exams.duration}">Duration (minutes)</th>
+                                <th th:text="#{exams.teacher}">Teacher</th>
+                                <th th:text="#{common.actions}">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="exam : ${exams}">
+                                <td th:text="${exam.title}"></td>
+                                <td>
+                                    <span th:if="${exam.description != null && !exam.description.isEmpty()}" 
+                                          th:text="${#strings.length(exam.description) > 50 ? #strings.substring(exam.description, 0, 50) + '...' : exam.description}"></span>
+                                    <span th:if="${exam.description == null || exam.description.isEmpty()}" 
+                                          class="text-muted" th:text="#{exams.no.description}">No description</span>
+                                </td>
+                                <td th:text="${exam.durationMinutes}"></td>
+                                <td th:text="${exam.teacher != null ? exam.teacher.firstName + ' ' + exam.teacher.lastName : ''}"></td>
+                                <td>
+                                    <div th:if="${exam.teacher != null && exam.teacher.id == currentTeacher.id}" class="btn-group" role="group">
+                                        <a th:href="@{/teacher/courses/{courseId}/exams/{examId}/edit(courseId=${course.id}, examId=${exam.id})}"
+                                           class="btn btn-sm btn-primary" th:text="#{common.edit}">Edit</a>
+                                        <form th:action="@{/teacher/courses/{courseId}/exams/{examId}/delete(courseId=${course.id}, examId=${exam.id})}"
+                                              method="post"
+                                              class="d-inline"
+                                              th:onsubmit="return confirm([[#{exams.delete.confirm}]])">
+                                            <button type="submit" class="btn btn-sm btn-danger" th:text="#{common.delete}">Delete</button>
+                                        </form>
+                                    </div>
+                                    <div th:if="${exam.teacher == null || exam.teacher.id != currentTeacher.id}" class="text-muted">
+                                        <span th:text="#{exams.view.only}">View only</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${exams == null || exams.isEmpty()}" class="alert alert-info" th:text="#{exams.no.exams}">
+                    No exams have been created for this course yet. Click the "Add New Exam" button to create one.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

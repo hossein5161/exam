@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <div th:fragment="language-selector" class="language-selector">
+        <div class="dropdown">
+            <button class="btn btn-outline-light dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <span th:text="#{language.change}">Change Language</span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="languageDropdown">
+                <li><a class="dropdown-item" th:href="@{/change-locale(lang='fa')}" th:text="#{language.persian}">Persian</a></li>
+                <li><a class="dropdown-item" th:href="@{/change-locale(lang='en')}" th:text="#{language.english}">English</a></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+

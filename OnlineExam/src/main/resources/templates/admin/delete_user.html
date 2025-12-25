@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:with="currentLang=${#locale != null ? #locale.language : 'en'}"
+      th:attr="dir=${currentLang == 'fa' ? 'rtl' : 'ltr'}, lang=${currentLang}">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{admin.delete.user.title}">Delete User</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            text-align: start;
+        }
+    </style>
+</head>
+<body>
+    <div style="position: fixed; top: 15px; right: 15px; z-index: 1100;">
+        <div th:replace="~{fragments/language-selector :: language-selector}"></div>
+    </div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#" th:text="#{application.title}">Online Exam Management System</a>
+            <div class="navbar-nav me-auto">
+                <a class="nav-link" th:href="@{/admin/users}" th:text="#{common.back}">Back</a>
+                <form th:action="@{/logout}" method="post" class="d-inline me-2">
+                    <button type="submit" class="btn btn-outline-light" th:text="#{common.logout}">Logout</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        <h2 th:text="#{admin.delete.user.title}">Delete User</h2>
+        
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div th:if="${warning}" class="alert alert-warning alert-dismissible fade show" role="alert">
+            <span th:text="${warning}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header" th:text="#{users.details}">User Information</div>
+            <div class="card-body">
+                <p><strong th:text="#{users.username}">Username</strong>: <span th:text="${user.username}"></span></p>
+                <p><strong th:text="#{users.firstName}">First Name</strong>: <span th:text="${user.firstName}"></span></p>
+                <p><strong th:text="#{users.lastName}">Last Name</strong>: <span th:text="${user.lastName}"></span></p>
+                <p><strong th:text="#{users.email}">Email</strong>: <span th:text="${user.email}"></span></p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header" th:text="#{admin.delete.user.reason.title}">Deletion Reason</div>
+            <div class="card-body">
+                <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post">
+                    <div class="mb-3">
+                        <label for="deletionReason" class="form-label" th:text="#{admin.delete.user.reason.label}">Please enter the reason for deleting this user:</label>
+                        <textarea class="form-control" id="deletionReason" name="deletionReason" rows="5" 
+                                  th:placeholder="#{admin.delete.user.reason.placeholder}" required></textarea>
+                        <div class="form-text" th:text="#{admin.delete.user.reason.help}">This reason will be sent to the user via email.</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger" th:text="#{admin.delete.user.confirm}">Delete User</button>
+                        <a th:href="@{/admin/users}" class="btn btn-secondary" th:text="#{common.cancel}">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

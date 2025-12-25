@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:with="currentLang=${#locale != null ? #locale.language : 'en'}"
+      th:attr="dir=${currentLang == 'fa' ? 'rtl' : 'ltr'}, lang=${currentLang}">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{exams.add}">New Exam</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            text-align: start;
+        }
+    </style>
+</head>
+<body>
+    <div style="position: fixed; top: 15px; right: 15px; z-index: 1100;">
+        <div th:replace="~{fragments/language-selector :: language-selector}"></div>
+    </div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#" th:text="#{application.title}">Online Exam Management System</a>
+            <div class="navbar-nav me-auto">
+                <a class="nav-link" th:href="@{/teacher/courses/{id}/exams(id=${course.id})}" th:text="#{common.back}">Back</a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mt-4">
+        <h2 th:text="#{exams.add}">Add New Exam</h2>
+        <p class="text-muted"><span th:text="#{courses.title}">Course</span>: <span th:text="${course.title}"></span> (<span th:text="${course.courseCode}"></span>)</p>
+        
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <form th:action="@{/teacher/courses/{id}/exams(id=${course.id})}" method="post" th:object="${exam}">
+                    <div class="mb-3">
+                        <label class="form-label"><span th:text="#{exams.title.field}">Exam Title</span> <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" th:field="*{title}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" th:text="#{exams.description}">Description</label>
+                        <textarea class="form-control" th:field="*{description}" rows="4"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><span th:text="#{exams.duration}">Duration (minutes)</span> <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" th:field="*{durationMinutes}" min="1" required>
+                        <small class="form-text text-muted" th:text="#{exams.duration.help}">Required time for the exam in minutes</small>
+                    </div>
+                    <input type="hidden" th:field="*{course.id}">
+                    <input type="hidden" th:field="*{teacher.id}">
+                    <button type="submit" class="btn btn-primary" th:text="#{common.save}">Save</button>
+                    <a th:href="@{/teacher/courses/{id}/exams(id=${course.id})}" class="btn btn-secondary" th:text="#{common.cancel}">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

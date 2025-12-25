@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" th:fragment="navbar">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#" th:text="#{application.title}">Online Exam Management System</a>
+            <div class="navbar-nav me-auto">
+                <div th:replace="~{fragments/language-selector :: language-selector}"></div>
+                <span class="navbar-text ms-3" sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-outline-light" th:text="#{common.logout}">Logout</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+</body>
+</html>
+
