@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" dir="rtl" lang="fa">
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:with="currentLang=${#locale != null ? #locale.language : 'en'}"
+      th:attr="dir=${currentLang == 'fa' ? 'rtl' : 'ltr'}, lang=${currentLang}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>رد ثبت نام</title>
+    <title th:text="#{mail.user.rejection.title}">Registration Rejection</title>
     <style>
         body {
             font-family: 'Tahoma', 'Arial', sans-serif;
-            direction: rtl;
-            text-align: right;
+            text-align: start;
             background-color: #f4f4f4;
             margin: 0;
             padding: 0;
@@ -41,7 +42,7 @@
         }
         .info-box {
             background-color: #fff5f5;
-            border-right: 4px solid #e74c3c;
+            border-inline-start: 4px solid #e74c3c;
             padding: 15px;
             margin: 20px 0;
             border-radius: 5px;
@@ -79,37 +80,35 @@
         }
     </style>
 </head>
-<body dir="rtl">
+<body th:attr="dir=${currentLang == 'fa' ? 'rtl' : 'ltr'}">
     <div class="container">
         <div class="header">
-            <h1>❌ رد ثبت نام</h1>
+            <h1>❌ <span th:text="#{mail.user.rejection.title}">Registration Rejection</span></h1>
         </div>
         <div class="content">
-            <p>سلام <strong th:text="${user.firstName + ' ' + user.lastName}">کاربر گرامی</strong>،</p>
+            <p><span th:text="#{mail.user.rejection.greeting}">Hello</span> <strong th:text="${user.firstName + ' ' + user.lastName}">User</strong>,</p>
             
-            <p>متأسفانه باید به اطلاع شما برسانیم که ثبت نام شما در سیستم مدیریت آزمون آنلاین <strong>رد شده است</strong>.</p>
+            <p th:text="#{mail.user.rejection.message}">We regret to inform you that your registration has been rejected.</p>
             
             <div class="info-box">
-                <p><strong>نام کاربری:</strong> <span th:text="${user.username}"></span></p>
-                <p><strong>ایمیل:</strong> <span th:text="${user.email}"></span></p>
+                <p><strong th:text="#{mail.user.approval.username}">Username</strong>: <span th:text="${user.username}"></span></p>
+                <p><strong th:text="#{register.email}">Email</strong>: <span th:text="${user.email}"></span></p>
             </div>
             
             <div class="rejection-reason" th:if="${rejectionReason != null and !rejectionReason.isEmpty()}">
-                <p><strong>دلیل رد شدن:</strong></p>
+                <p><strong th:text="#{mail.user.rejection.reason}">Rejection Reason</strong>:</p>
                 <p th:text="${rejectionReason}"></p>
             </div>
             
-            <p>لطفاً با توجه به دلیل ذکر شده، اطلاعات خود را بررسی کرده و مجدداً ثبت نام کنید.</p>
-            
             <p style="text-align: center;">
-                <a th:href="@{|${baseUrl}/register|}" class="button">ثبت نام مجدد</a>
+                <a th:href="@{|${baseUrl}/register|}" class="button" th:text="#{common.register}">Register Again</a>
             </p>
             
-            <p>در صورت نیاز به راهنمایی بیشتر، لطفاً با پشتیبانی تماس بگیرید.</p>
+            <p th:text="#{mail.user.rejection.support.message}">If you have any questions, please contact support.</p>
         </div>
         <div class="footer">
-            <p>این ایمیل به صورت خودکار ارسال شده است. لطفاً به آن پاسخ ندهید.</p>
-            <p th:text="${applicationTitle}">سیستم مدیریت آزمون آنلاین</p>
+            <p th:text="#{mail.user.rejection.footer.auto}">This email was sent automatically. Please do not reply.</p>
+            <p th:text="${applicationTitle}">Online Exam Management System</p>
         </div>
     </div>
 </body>

@@ -1,24 +1,28 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" dir="rtl" lang="fa">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:with="currentLang=${#locale != null ? #locale.language : 'en'}"
+      th:attr="dir=${currentLang == 'fa' ? 'rtl' : 'ltr'}, lang=${currentLang}">
 <head>
     <meta charset="UTF-8">
-    <title>جزئیات دوره</title>
+    <title th:text="#{courses.details}">Course Details</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            direction: rtl;
-            text-align: right;
+            text-align: start;
         }
     </style>
 </head>
 <body>
+    <div style="position: fixed; top: 15px; right: 15px; z-index: 1100;">
+        <div th:replace="~{fragments/language-selector :: language-selector}"></div>
+    </div>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">سیستم مدیریت آزمون آنلاین</a>
+            <a class="navbar-brand" href="#" th:text="#{application.title}">Online Exam Management System</a>
             <div class="navbar-nav me-auto">
-                <a class="nav-link" th:href="@{/admin/courses}">بازگشت به لیست دوره‌ها</a>
+                <a class="nav-link" th:href="@{/admin/courses}" th:text="#{common.back}">Back</a>
                 <form th:action="@{/logout}" method="post" class="d-inline me-2">
-                    <button type="submit" class="btn btn-outline-light">خروج</button>
+                    <button type="submit" class="btn btn-outline-light" th:text="#{common.logout}">Logout</button>
                 </form>
             </div>
         </div>
@@ -26,10 +30,10 @@
     
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>جزئیات دوره: <span th:text="${course.title}"></span></h2>
+            <h2><span th:text="#{courses.details}">Course Details</span>: <span th:text="${course.title}"></span></h2>
             <div>
-                <button type="button" class="btn btn-primary" onclick="toggleEditMode()" id="editBtn">ویرایش</button>
-                <a th:href="@{/admin/courses}" class="btn btn-secondary">بازگشت</a>
+                <button type="button" class="btn btn-primary" onclick="toggleEditMode()" id="editBtn" th:text="#{common.edit}">Edit</button>
+                <a th:href="@{/admin/courses}" class="btn btn-secondary" th:text="#{common.back}">Back</a>
             </div>
         </div>
         
@@ -43,94 +47,91 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         
-        <!-- فرم ویرایش دوره -->
         <div class="card mb-4" id="editForm" style="display: none;">
-            <div class="card-header">ویرایش اطلاعات دوره</div>
+            <div class="card-header" th:text="#{courses.edit}">Edit Course</div>
             <div class="card-body">
                 <form th:action="@{/admin/courses/{id}/edit(id=${course.id})}" method="post" th:object="${course}">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">شناسه یکتای دوره</label>
+                            <label class="form-label" th:text="#{courses.courseCode}">Course Code</label>
                             <input type="text" class="form-control" th:field="*{courseCode}" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">عنوان دوره</label>
+                            <label class="form-label" th:text="#{courses.title}">Title</label>
                             <input type="text" class="form-control" th:field="*{title}" required>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">تاریخ شروع</label>
+                            <label class="form-label" th:text="#{courses.startDate}">Start Date</label>
                             <input type="date" class="form-control" 
                                    th:value="${course.startDate != null ? #temporals.format(course.startDate, 'yyyy-MM-dd') : ''}" 
                                    name="startDate" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">تاریخ پایان</label>
+                            <label class="form-label" th:text="#{courses.endDate}">End Date</label>
                             <input type="date" class="form-control" 
                                    th:value="${course.endDate != null ? #temporals.format(course.endDate, 'yyyy-MM-dd') : ''}" 
                                    name="endDate" required>
                         </div>
                     </div>
                     <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-success">ذخیره تغییرات</button>
-                        <button type="button" class="btn btn-secondary" onclick="toggleEditMode()">انصراف</button>
+                        <button type="submit" class="btn btn-success" th:text="#{common.save}">Save</button>
+                        <button type="button" class="btn btn-secondary" onclick="toggleEditMode()" th:text="#{common.cancel}">Cancel</button>
                     </div>
                 </form>
             </div>
         </div>
         
-        <!-- نمایش اطلاعات دوره -->
         <div class="card mb-4" id="viewInfo">
-            <div class="card-header">اطلاعات دوره</div>
+            <div class="card-header" th:text="#{courses.details}">Course Information</div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <p><strong>شناسه یکتای دوره:</strong> <span th:text="${course.courseCode}"></span></p>
-                        <p><strong>عنوان دوره:</strong> <span th:text="${course.title}"></span></p>
+                        <p><strong th:text="#{courses.courseCode}">Course Code</strong>: <span th:text="${course.courseCode}"></span></p>
+                        <p><strong th:text="#{courses.title}">Title</strong>: <span th:text="${course.title}"></span></p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>تاریخ شروع:</strong> <span th:text="${#temporals.format(course.startDate, 'yyyy/MM/dd')}"></span></p>
-                        <p><strong>تاریخ پایان:</strong> <span th:text="${#temporals.format(course.endDate, 'yyyy/MM/dd')}"></span></p>
+                        <p><strong th:text="#{courses.startDate}">Start Date</strong>: <span th:text="${#temporals.format(course.startDate, 'yyyy/MM/dd')}"></span></p>
+                        <p><strong th:text="#{courses.endDate}">End Date</strong>: <span th:text="${#temporals.format(course.endDate, 'yyyy/MM/dd')}"></span></p>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- اطلاعات استاد -->
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>استاد دوره</span>
-                <a th:href="@{/admin/courses/{id}/assign-teacher(id=${course.id})}" class="btn btn-sm btn-warning">تعیین/تغییر استاد</a>
+                <span th:text="#{courses.teacher}">Teacher</span>
+                <a th:href="@{/admin/courses/{id}/assign-teacher(id=${course.id})}" class="btn btn-sm btn-warning" th:text="#{courses.assign.teacher}">Assign Teacher</a>
             </div>
             <div class="card-body">
                 <div th:if="${course.teacher != null}">
-                    <p><strong>نام:</strong> <span th:text="${course.teacher.firstName + ' ' + course.teacher.lastName}"></span></p>
-                    <p><strong>نام کاربری:</strong> <span th:text="${course.teacher.username}"></span></p>
-                    <p><strong>ایمیل:</strong> <span th:text="${course.teacher.email}"></span></p>
+                    <p><strong th:text="#{users.firstName}">First Name</strong>: <span th:text="${course.teacher.firstName}"></span></p>
+                    <p><strong th:text="#{users.lastName}">Last Name</strong>: <span th:text="${course.teacher.lastName}"></span></p>
+                    <p><strong th:text="#{users.username}">Username</strong>: <span th:text="${course.teacher.username}"></span></p>
+                    <p><strong th:text="#{users.email}">Email</strong>: <span th:text="${course.teacher.email}"></span></p>
                 </div>
                 <div th:if="${course.teacher == null}">
-                    <p class="text-muted">استادی برای این دوره تعیین نشده است.</p>
+                    <p class="text-muted" th:text="#{courses.teacher.not.assigned}">No teacher assigned to this course.</p>
                 </div>
             </div>
         </div>
         
-        <!-- لیست دانشجویان -->
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>لیست دانشجویان (<span th:text="${course.students != null ? course.students.size() : 0}"></span> نفر)</span>
-                <a th:href="@{/admin/courses/{id}/add-student(id=${course.id})}" class="btn btn-sm btn-success">افزودن دانشجو</a>
+                <span th:text="#{courses.students}">Students</span> (<span th:text="${course.students != null ? course.students.size() : 0}"></span>)
+                <a th:href="@{/admin/courses/{id}/add-student(id=${course.id})}" class="btn btn-sm btn-success" th:text="#{courses.add.student}">Add Student</a>
             </div>
             <div class="card-body">
                 <div th:if="${course.students != null and course.students.size() > 0}">
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>نام</th>
-                                <th>نام خانوادگی</th>
-                                <th>نام کاربری</th>
-                                <th>ایمیل</th>
-                                <th>عملیات</th>
+                                <th th:text="#{users.firstName}">First Name</th>
+                                <th th:text="#{users.lastName}">Last Name</th>
+                                <th th:text="#{users.username}">Username</th>
+                                <th th:text="#{users.email}">Email</th>
+                                <th th:text="#{common.actions}">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -141,9 +142,9 @@
                                 <td th:text="${student.email}"></td>
                                 <td>
                                     <form th:action="@{/admin/courses/{id}/remove-student(id=${course.id})}" method="post" class="d-inline" 
-                                          onsubmit="return confirm('آیا مطمئن هستید که می‌خواهید این دانشجو را از دوره حذف کنید؟')">
+                                          th:onsubmit="return confirm([[#{courses.remove.student.confirm}]])">
                                         <input type="hidden" name="studentId" th:value="${student.id}">
-                                        <button type="submit" class="btn btn-sm btn-danger">حذف از دوره</button>
+                                        <button type="submit" class="btn btn-sm btn-danger" th:text="#{courses.remove.student}">Remove</button>
                                     </form>
                                 </td>
                             </tr>
@@ -151,14 +152,17 @@
                     </table>
                 </div>
                 <div th:if="${course.students == null or course.students.size() == 0}">
-                    <p class="text-muted text-center">هیچ دانشجویی در این دوره ثبت نام نشده است.</p>
+                    <p class="text-muted text-center" th:text="#{courses.no.students}">No students enrolled in this course.</p>
                 </div>
             </div>
         </div>
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
+    <script th:inline="javascript">
+        const editText ='Edit';
+        const cancelText ='Cancel';
+        
         function toggleEditMode() {
             const editForm = document.getElementById('editForm');
             const viewInfo = document.getElementById('viewInfo');
@@ -167,13 +171,13 @@
             if (editForm.style.display === 'none') {
                 editForm.style.display = 'block';
                 viewInfo.style.display = 'none';
-                editBtn.textContent = 'انصراف';
+                editBtn.textContent = cancelText;
                 editBtn.classList.remove('btn-primary');
                 editBtn.classList.add('btn-secondary');
             } else {
                 editForm.style.display = 'none';
                 viewInfo.style.display = 'block';
-                editBtn.textContent = 'ویرایش';
+                editBtn.textContent = editText;
                 editBtn.classList.remove('btn-secondary');
                 editBtn.classList.add('btn-primary');
             }

@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" dir="rtl" lang="fa">
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:with="currentLang=${#locale != null ? #locale.language : 'en'}"
+      th:attr="dir=${currentLang == 'fa' ? 'rtl' : 'ltr'}, lang=${currentLang}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تایید حساب کاربری</title>
+    <title th:text="#{mail.user.approval.title}">Account Approval</title>
     <style>
         body {
             font-family: 'Tahoma', 'Arial', sans-serif;
-            direction: rtl;
-            text-align: right;
+            text-align: start;
             background-color: #f4f4f4;
             margin: 0;
             padding: 0;
@@ -74,31 +75,31 @@
 <body dir="rtl">
     <div class="container">
         <div class="header">
-            <h1>🎉 تایید حساب کاربری</h1>
+            <h1>🎉 <span th:text="#{mail.user.approval.title}">Account Approval</span></h1>
         </div>
         <div class="content">
-            <p>سلام <strong th:text="${user.firstName + ' ' + user.lastName}">کاربر گرامی</strong>،</p>
+            <p><span th:text="#{mail.user.approval.greeting}">Hello</span> <strong th:text="${user.firstName + ' ' + user.lastName}">User</strong>,</p>
             
-            <p>خوشحالیم که به شما اطلاع دهیم حساب کاربری شما در سیستم مدیریت آزمون آنلاین <strong>تایید شده است</strong>.</p>
+            <p th:text="#{mail.user.approval.message}">We are pleased to inform you that your account has been approved.</p>
             
             <div class="info-box">
-                <p><strong>نام کاربری:</strong> <span th:text="${user.username}"></span></p>
-                <p><strong>نقش:</strong> 
+                <p><strong th:text="#{mail.user.approval.username}">Username</strong>: <span th:text="${user.username}"></span></p>
+                <p><strong th:text="#{mail.user.approval.role}">Role</strong>: 
                     <span th:each="role : ${user.roles}" th:text="${role.persianName}"></span>
                 </p>
             </div>
             
-            <p>اکنون می‌توانید با استفاده از نام کاربری و رمز عبور خود وارد سیستم شوید و از امکانات آن استفاده کنید.</p>
+            <p th:text="#{mail.user.approval.login.message}">You can now log in using your username and password.</p>
             
             <p style="text-align: center;">
-                <a th:href="@{|${baseUrl}/login|}" class="button">ورود به سیستم</a>
+                <a th:href="@{|${baseUrl}/login|}" class="button" th:text="#{mail.user.approval.login.button}">Login to System</a>
             </p>
             
-            <p>در صورت بروز هرگونه مشکل، لطفاً با پشتیبانی تماس بگیرید.</p>
+            <p th:text="#{mail.user.approval.support.message}">If you encounter any issues, please contact support.</p>
         </div>
         <div class="footer">
-            <p>این ایمیل به صورت خودکار ارسال شده است. لطفاً به آن پاسخ ندهید.</p>
-            <p th:text="${applicationTitle}">سیستم مدیریت آزمون آنلاین</p>
+            <p th:text="#{mail.user.approval.footer.auto}">This email was sent automatically. Please do not reply.</p>
+            <p th:text="${applicationTitle}">Online Exam Management System</p>
         </div>
     </div>
 </body>

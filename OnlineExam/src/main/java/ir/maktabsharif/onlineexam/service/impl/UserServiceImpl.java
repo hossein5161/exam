@@ -8,11 +8,14 @@ import ir.maktabsharif.onlineexam.repository.RoleRepository;
 import ir.maktabsharif.onlineexam.repository.UserRepository;
 import ir.maktabsharif.onlineexam.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
@@ -24,6 +27,7 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final CourseRepository courseRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MessageSource messageSource;
 
     @Override
     @Transactional
@@ -35,7 +39,9 @@ public class UserServiceImpl implements UserService {
         if (existingUserByUsername.isPresent()) {
             User existingUser = existingUserByUsername.get();
             if (existingUser.getStatus() == UserStatus.APPROVED || existingUser.getStatus() == UserStatus.PENDING) {
-                throw new RuntimeException("نام کاربری قبلاً استفاده شده است");
+                Locale locale = LocaleContextHolder.getLocale();
+                String message = messageSource.getMessage("register.user.exists.add.role", null, locale);
+                throw new RuntimeException(message);
             }
             if (existingUser.getStatus() == UserStatus.REJECTED) {
                 userToDelete = existingUser;
@@ -48,7 +54,9 @@ public class UserServiceImpl implements UserService {
             User existingUser = existingUserByEmail.get();
             if (userToDelete == null || !userToDelete.getId().equals(existingUser.getId())) {
                 if (existingUser.getStatus() == UserStatus.APPROVED || existingUser.getStatus() == UserStatus.PENDING) {
-                    throw new RuntimeException("ایمیل قبلاً استفاده شده است");
+                    Locale locale = LocaleContextHolder.getLocale();
+                    String message = messageSource.getMessage("register.user.exists.add.role", null, locale);
+                    throw new RuntimeException(message);
                 }
                 if (existingUser.getStatus() == UserStatus.REJECTED) {
                     userToDelete = existingUser;
@@ -59,8 +67,13 @@ public class UserServiceImpl implements UserService {
             userRepository.delete(userToDelete);
             userRepository.flush();
         }
+        Locale locale = LocaleContextHolder.getLocale();
         Role role = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new RuntimeException("نقش یافت نشد: " + roleName));
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("error.role.not.found", 
+                        new Object[]{roleName}, locale);
+                    return new RuntimeException(message);
+                });
         User newUser = new User();
         newUser.setUsername(user.getUsername());
         newUser.setEmail(user.getEmail());
@@ -72,6 +85,8 @@ public class UserServiceImpl implements UserService {
         newUser.setRoles(Set.of(role));
         return userRepository.save(newUser);
     }
+
+
 
     @Override
     @Transactional
@@ -107,20 +122,25 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        Locale locale = LocaleContextHolder.getLocale();
         UserUpdateChanges changes = UserUpdateChanges.builder().build();
 
         if (updatedUser.getFirstName() != null && !updatedUser.getFirstName().equals(user.getFirstName())) {
-            changes.addChange("نام", user.getFirstName(), updatedUser.getFirstName());
+            String firstNameLabel = messageSource.getMessage("users.firstName", null, locale);
+            changes.addChange(firstNameLabel, user.getFirstName(), updatedUser.getFirstName());
             user.setFirstName(updatedUser.getFirstName());
         }
 
         if (updatedUser.getLastName() != null && !updatedUser.getLastName().equals(user.getLastName())) {
-            changes.addChange("نام خانوادگی", user.getLastName(), updatedUser.getLastName());
+            String lastNameLabel = messageSource.getMessage("users.lastName", null, locale);
+            changes.addChange(lastNameLabel, user.getLastName(), updatedUser.getLastName());
             user.setLastName(updatedUser.getLastName());
         }
 
         if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
-            changes.addChange("رمز عبور", "***", "تغییر یافته");
+            String passwordLabel = messageSource.getMessage("register.password", null, locale);
+            String changedLabel = messageSource.getMessage("common.changed", null, locale);
+            changes.addChange(passwordLabel, "***", changedLabel);
             changes.setPasswordChanged(true);
             user.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
         }
@@ -131,45 +151,10 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User changeUserRole(Long userId, String roleName) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Role newRole = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
-
-        var teacherCourses = courseRepository.findByTeacher(user);
-        var studentCourses = courseRepository.findByStudentsContaining(user);
-        
-        if (!teacherCourses.isEmpty() || !studentCourses.isEmpty()) {
-            StringBuilder message = new StringBuilder("امکان تغییر نقش این کاربر وجود ندارد.\n\n");
-            
-            if (!teacherCourses.isEmpty()) {
-                message.append("این کاربر استاد دوره‌های زیر است:\n");
-                for (int i = 0; i < teacherCourses.size(); i++) {
-                    if (i > 0) message.append("، ");
-                    message.append("\"").append(teacherCourses.get(i).getTitle()).append("\"");
-                }
-                message.append("\n");
-            }
-            
-            if (!studentCourses.isEmpty()) {
-                message.append("این کاربر دانشجوی دوره‌های زیر است:\n");
-                for (int i = 0; i < studentCourses.size(); i++) {
-                    if (i > 0) message.append("، ");
-                    message.append("\"").append(studentCourses.get(i).getTitle()).append("\"");
-                }
-                message.append("\n");
-            }
-            
-            message.append("\nبرای تغییر نقش، لطفاً ابتدا این کاربر را از دوره‌های فوق حذف کنید.");
-            throw new RuntimeException(message.toString());
-        }
-
-        Set<Role> roles = new HashSet<>();
-        roles.add(newRole);
-        user.setRoles(roles);
-        return userRepository.save(user);
+        return changeUserRoles(userId, List.of(roleName));
     }
+
+
 
     @Override
     public List<User> searchUsers(String roleName, String firstName, String lastName, UserStatus status) {
@@ -195,18 +180,28 @@ public class UserServiceImpl implements UserService {
     }
 
 
+
+
     @Override
     @Transactional
     public void deleteUser(Long userId, Long currentUserId) {
+        Locale locale = LocaleContextHolder.getLocale();
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("کاربر یافت نشد"));
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("error.user.not.found", null, locale);
+                    return new RuntimeException(message);
+                });
 
         if (currentUserId != null && currentUserId.equals(userId)) {
-            throw new RuntimeException("شما نمی‌توانید خودتان را حذف کنید");
+            String message = messageSource.getMessage("users.delete.error.cannot.delete.self", null, locale);
+            throw new RuntimeException(message);
         }
 
         Role adminRole = roleRepository.findByName("ROLE_ADMIN")
-                .orElseThrow(() -> new RuntimeException("نقش ادمین یافت نشد"));
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("error.role.admin.not.found", null, locale);
+                    return new RuntimeException(message);
+                });
 
         if (user.getRoles().contains(adminRole)) {
             List<User> allAdmins = userRepository.findByRolesContaining(adminRole);
@@ -216,15 +211,16 @@ public class UserServiceImpl implements UserService {
                     .count();
 
             if (remainingAdmins == 0) {
-                throw new RuntimeException(
-                    "امکان حذف این کاربر وجود ندارد. این کاربر ادمین است و حذف آن باعث می‌شود که هیچ ادمینی در سیستم باقی نماند. " +
-                    "لطفاً ابتدا یک ادمین دیگر ایجاد کنید و سپس اقدام به حذف این کاربر نمایید."
-                );
+                String message = messageSource.getMessage("users.delete.error.last.admin", null, locale);
+                throw new RuntimeException(message);
             }
         }
 
         Role teacherRole = roleRepository.findByName("ROLE_TEACHER")
-                .orElseThrow(() -> new RuntimeException("نقش استاد یافت نشد"));
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("error.role.teacher.not.found", null, locale);
+                    return new RuntimeException(message);
+                });
 
         if (user.getRoles().contains(teacherRole)) {
             var courses = courseRepository.findByTeacher(user);
@@ -232,16 +228,13 @@ public class UserServiceImpl implements UserService {
                 StringBuilder courseList = new StringBuilder();
                 for (int i = 0; i < courses.size(); i++) {
                     if (i > 0) {
-                        courseList.append("، ");
+                        courseList.append(", ");
                     }
                     courseList.append("\"").append(courses.get(i).getTitle()).append("\"");
                 }
-                throw new RuntimeException(
-                    "امکان حذف این کاربر وجود ندارد. این کاربر استاد است و در حال حاضر استاد " + 
-                    courses.size() + " دوره می‌باشد:\n" + 
-                    courseList + "\n\n" +
-                    "برای حذف این کاربر، لطفاً ابتدا استاد را از تمام دوره‌هایش حذف کنید و سپس مجدداً اقدام به حذف کاربر نمایید."
-                );
+                String message = messageSource.getMessage("users.delete.error.teacher.has.courses", 
+                    new Object[]{courses.size(), courseList.toString()}, locale);
+                throw new RuntimeException(message);
             }
         }
 
@@ -250,19 +243,128 @@ public class UserServiceImpl implements UserService {
             StringBuilder courseList = new StringBuilder();
             for (int i = 0; i < studentCourses.size(); i++) {
                 if (i > 0) {
-                    courseList.append("، ");
+                    courseList.append(", ");
                 }
                 courseList.append("\"").append(studentCourses.get(i).getTitle()).append("\"");
             }
-            throw new RuntimeException(
-                "امکان حذف این کاربر وجود ندارد. این کاربر دانشجو است و در حال حاضر در " + 
-                studentCourses.size() + " دوره ثبت‌نام کرده است:\n" + 
-                courseList + "\n\n" +
-                "برای حذف این کاربر، لطفاً ابتدا دانشجو را از تمام دوره‌هایش حذف کنید و سپس مجدداً اقدام به حذف کاربر نمایید."
-            );
+            String message = messageSource.getMessage("users.delete.error.student.has.courses", 
+                new Object[]{studentCourses.size(), courseList.toString()}, locale);
+            throw new RuntimeException(message);
         }
 
         userRepository.deleteById(userId);
+    }
+
+    @Override
+    @Transactional
+    public User addRoleToExistingUser(String usernameOrEmail, String password, String roleName) {
+        Locale locale = LocaleContextHolder.getLocale();
+
+        Optional<User> userOpt = userRepository.findByUsername(usernameOrEmail);
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByEmail(usernameOrEmail);
+        }
+
+        if (userOpt.isEmpty()) {
+            String message = messageSource.getMessage("register.add.role.user.not.found", null, locale);
+            throw new RuntimeException(message);
+        }
+
+        User user = userOpt.get();
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            String message = messageSource.getMessage("register.add.role.invalid.password", null, locale);
+            throw new RuntimeException(message);
+        }
+
+        if (user.getStatus() != UserStatus.APPROVED && user.getStatus() != UserStatus.PENDING) {
+            String message = messageSource.getMessage("register.add.role.user.not.approved", null, locale);
+            throw new RuntimeException(message);
+        }
+
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("error.role.not.found",
+                            new Object[]{roleName}, locale);
+                    return new RuntimeException(message);
+                });
+
+        if (user.getRoles().contains(role)) {
+            String message = messageSource.getMessage("register.add.role.already.has",
+                    new Object[]{roleName}, locale);
+            throw new RuntimeException(message);
+        }
+
+        Set<Role> roles = new HashSet<>(user.getRoles());
+        roles.add(role);
+        user.setRoles(roles);
+        user.setStatus(UserStatus.PENDING);
+        user.setRejectionReason(null);
+
+        return userRepository.save(user);
+    }
+
+
+    @Override
+    @Transactional
+    public User changeUserRoles(Long userId, List<String> roleNames) {
+        Locale locale = LocaleContextHolder.getLocale();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("error.user.not.found", null, locale);
+                    return new RuntimeException(message);
+                });
+
+        if (roleNames == null || roleNames.isEmpty()) {
+            String message = messageSource.getMessage("users.roles.change.error.empty", null, locale);
+            throw new RuntimeException(message);
+        }
+
+        Set<Role> newRoles = new HashSet<>();
+        for (String roleName : roleNames) {
+            Role role = roleRepository.findByName(roleName)
+                    .orElseThrow(() -> {
+                        String message = messageSource.getMessage("error.role.not.found",
+                                new Object[]{roleName}, locale);
+                        return new RuntimeException(message);
+                    });
+            newRoles.add(role);
+        }
+
+        var teacherCourses = courseRepository.findByTeacher(user);
+        var studentCourses = courseRepository.findByStudentsContaining(user);
+
+        Set<Role> currentRoles = user.getRoles();
+        boolean wasTeacher = currentRoles.stream().anyMatch(r -> r.getName().equals("ROLE_TEACHER"));
+        boolean wasStudent = currentRoles.stream().anyMatch(r -> r.getName().equals("ROLE_STUDENT"));
+
+        boolean willBeTeacher = newRoles.stream().anyMatch(r -> r.getName().equals("ROLE_TEACHER"));
+        boolean willBeStudent = newRoles.stream().anyMatch(r -> r.getName().equals("ROLE_STUDENT"));
+
+        if (wasTeacher && !willBeTeacher && !teacherCourses.isEmpty()) {
+            StringBuilder courseTitles = new StringBuilder();
+            for (int i = 0; i < teacherCourses.size(); i++) {
+                if (i > 0) courseTitles.append(", ");
+                courseTitles.append("\"").append(teacherCourses.get(i).getTitle()).append("\"");
+            }
+            String message = messageSource.getMessage("users.role.change.error.teacher.has.courses",
+                    new Object[]{courseTitles.toString()}, locale);
+            throw new RuntimeException(message);
+        }
+
+        if (wasStudent && !willBeStudent && !studentCourses.isEmpty()) {
+            StringBuilder courseTitles = new StringBuilder();
+            for (int i = 0; i < studentCourses.size(); i++) {
+                if (i > 0) courseTitles.append(", ");
+                courseTitles.append("\"").append(studentCourses.get(i).getTitle()).append("\"");
+            }
+            String message = messageSource.getMessage("users.role.change.error.student.has.courses",
+                    new Object[]{courseTitles.toString()}, locale);
+            throw new RuntimeException(message);
+        }
+
+        user.setRoles(newRoles);
+        return userRepository.save(user);
     }
 }
 

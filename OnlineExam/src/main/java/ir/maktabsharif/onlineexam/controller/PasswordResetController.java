@@ -7,10 +7,13 @@ import ir.maktabsharif.onlineexam.service.UserService;
 import ir.maktabsharif.onlineexam.util.PasswordValidationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import java.util.Locale;
 
 @Controller
 @RequiredArgsConstructor
@@ -22,6 +25,7 @@ public class PasswordResetController {
     private final PasswordResetService passwordResetService;
     private final EmailService emailService;
     private final UserService userService;
+    private final MessageSource messageSource;
 
     @GetMapping("/forgot")
     public String forgotPasswordPage() {
@@ -30,24 +34,27 @@ public class PasswordResetController {
 
     @PostMapping("/forgot")
     public String sendResetCode(@RequestParam String email, RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
             if (userRepository.findByEmail(email).isEmpty()) {
-                redirectAttributes.addFlashAttribute("error", "ایمیل وارد شده در سیستم یافت نشد");
+                String errorMessage = messageSource.getMessage("password.forgot.email.not.found", null, locale);
+                redirectAttributes.addFlashAttribute("error", errorMessage);
                 return "redirect:/password-reset/forgot";
             }
 
             String code = passwordResetService.generateAndStoreResetCode(email);
 
-            emailService.sendPasswordResetCode(email, code);
+            emailService.sendPasswordResetCode(email, code, locale);
 
-            redirectAttributes.addFlashAttribute("success", 
-                "کد فراموشی رمز عبور به ایمیل شما ارسال شد. لطفاً ایمیل خود را بررسی کنید.");
+            String successMessage = messageSource.getMessage("password.forgot.code.sent", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
             redirectAttributes.addFlashAttribute("email", email);
             return "redirect:/password-reset/verify-code";
         } catch (Exception e) {
             log.error("Error sending password reset code", e);
-            redirectAttributes.addFlashAttribute("error", 
-                "خطا در ارسال کد: " + e.getMessage());
+            String errorMessage = messageSource.getMessage("password.forgot.send.error", 
+                new Object[]{e.getMessage()}, locale);
+            redirectAttributes.addFlashAttribute("error", errorMessage);
             return "redirect:/password-reset/forgot";
         }
     }
@@ -65,10 +72,11 @@ public class PasswordResetController {
     public String verifyCode(@RequestParam String email,
                             @RequestParam String code,
                             RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
             if (!passwordResetService.validateResetCode(email, code)) {
-                redirectAttributes.addFlashAttribute("error", 
-                    "کد وارد شده نامعتبر است یا منقضی شده است. لطفاً دوباره تلاش کنید.");
+                String errorMessage = messageSource.getMessage("password.verify.code.invalid", null, locale);
+                redirectAttributes.addFlashAttribute("error", errorMessage);
                 redirectAttributes.addFlashAttribute("email", email);
                 return "redirect:/password-reset/verify-code";
             }
@@ -76,11 +84,14 @@ public class PasswordResetController {
             passwordResetService.deleteResetCode(email);
 
             redirectAttributes.addFlashAttribute("email", email);
-            redirectAttributes.addFlashAttribute("success", "کد با موفقیت تایید شد");
+            String successMessage = messageSource.getMessage("password.verify.code.success", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
             return "redirect:/password-reset/reset";
         } catch (Exception e) {
-            log.error("خطا در تایید کد", e);
-            redirectAttributes.addFlashAttribute("error", "خطا در تایید کد: " + e.getMessage());
+            log.error("Error verifying code", e);
+            String errorMessage = messageSource.getMessage("password.verify.code.error", 
+                new Object[]{e.getMessage()}, locale);
+            redirectAttributes.addFlashAttribute("error", errorMessage);
             redirectAttributes.addFlashAttribute("email", email);
             return "redirect:/password-reset/verify-code";
         }
@@ -102,12 +113,21 @@ public class PasswordResetController {
                                RedirectAttributes redirectAttributes) {
         try {
             if (!newPassword.equals(confirmPassword)) {
-                redirectAttributes.addFlashAttribute("error", "رمز عبور و تایید رمز عبور مطابقت ندارند");
+                String mismatchMessage = messageSource.getMessage(
+                    "validation.password.mismatch", 
+                    null, 
+                    LocaleContextHolder.getLocale()
+                );
+                redirectAttributes.addFlashAttribute("error", mismatchMessage);
                 redirectAttributes.addFlashAttribute("email", email);
                 return "redirect:/password-reset/reset";
             }
 
-            String passwordError = PasswordValidationUtil.validate(newPassword);
+            String passwordError = PasswordValidationUtil.validate(
+                newPassword, 
+                messageSource, 
+                LocaleContextHolder.getLocale()
+            );
             if (passwordError != null) {
                 redirectAttributes.addFlashAttribute("error", passwordError);
                 redirectAttributes.addFlashAttribute("email", email);
@@ -116,7 +136,9 @@ public class PasswordResetController {
 
             var userOptional = userRepository.findByEmail(email);
             if (userOptional.isEmpty()) {
-                redirectAttributes.addFlashAttribute("error", "کاربر یافت نشد");
+                Locale locale = LocaleContextHolder.getLocale();
+                String errorMessage = messageSource.getMessage("password.reset.user.not.found", null, locale);
+                redirectAttributes.addFlashAttribute("error", errorMessage);
                 return "redirect:/password-reset/forgot";
             }
 
@@ -126,13 +148,16 @@ public class PasswordResetController {
             tempUser.setPassword(newPassword);
             userService.updateUser(user.getId(), tempUser);
 
-            redirectAttributes.addFlashAttribute("success", 
-                "رمز عبور شما با موفقیت تغییر کرد. اکنون می‌توانید وارد سیستم شوید.");
+            Locale locale = LocaleContextHolder.getLocale();
+            String successMessage = messageSource.getMessage("password.reset.success", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
             return "redirect:/login";
         } catch (Exception e) {
             log.error("Error occurred while changing the password", e);
-            redirectAttributes.addFlashAttribute("error", 
-                "خطا در تغییر رمز عبور: " + e.getMessage());
+            Locale locale = LocaleContextHolder.getLocale();
+            String errorMessage = messageSource.getMessage("password.reset.error", 
+                new Object[]{e.getMessage()}, locale);
+            redirectAttributes.addFlashAttribute("error", errorMessage);
             redirectAttributes.addFlashAttribute("email", email);
             return "redirect:/password-reset/reset";
         }

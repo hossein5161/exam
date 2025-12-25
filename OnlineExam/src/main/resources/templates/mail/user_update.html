@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" dir="rtl" lang="fa">
+<html xmlns:th="http://www.thymeleaf.org" 
+      th:with="currentLang=${#locale != null ? #locale.language : 'en'}"
+      th:attr="dir=${currentLang == 'fa' ? 'rtl' : 'ltr'}, lang=${currentLang}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>به‌روزرسانی اطلاعات حساب کاربری</title>
+    <title th:text="#{mail.user.update.title}">Account Information Update</title>
     <style>
         body {
             font-family: 'Tahoma', 'Arial', sans-serif;
-            direction: rtl;
-            text-align: right;
+            text-align: start;
             background-color: #f4f4f4;
             margin: 0;
             padding: 0;
@@ -57,7 +58,7 @@
         .changes-table th,
         .changes-table td {
             padding: 12px;
-            text-align: right;
+            text-align: start;
             border-bottom: 1px solid #ddd;
         }
         .changes-table th {
@@ -105,25 +106,25 @@
 <body dir="rtl">
     <div class="container">
         <div class="header">
-            <h1>📝 به‌روزرسانی اطلاعات حساب کاربری</h1>
+            <h1>📝 <span th:text="#{mail.user.update.title}">Account Information Update</span></h1>
         </div>
         <div class="content">
-            <p>سلام <strong th:text="${user.firstName + ' ' + user.lastName}">کاربر گرامی</strong>،</p>
+            <p><span th:text="#{mail.user.update.greeting}">Hello</span> <strong th:text="${user.firstName + ' ' + user.lastName}">User</strong>,</p>
             
-            <p>اطلاعات حساب کاربری شما در سیستم مدیریت آزمون آنلاین توسط مدیر سیستم <strong>به‌روزرسانی شده است</strong>.</p>
+            <p th:text="#{mail.user.update.message}">Your account information has been updated. The following changes were made:</p>
             
             <div class="info-box" th:if="${user.username != null}">
-                <p><strong>نام کاربری:</strong> <span th:text="${user.username}"></span></p>
+                <p><strong th:text="#{mail.user.approval.username}">Username</strong>: <span th:text="${user.username}"></span></p>
             </div>
             
-            <p><strong>فیلدهای تغییر یافته:</strong></p>
+            <p><strong th:text="#{mail.user.update.changes}">Changes</strong>:</p>
             
             <table class="changes-table">
                 <thead>
                     <tr>
-                        <th>فیلد</th>
-                        <th>مقدار قبلی</th>
-                        <th>مقدار جدید</th>
+                        <th th:text="#{common.field}">Field</th>
+                        <th th:text="#{common.old.value}">Old Value</th>
+                        <th th:text="#{common.new.value}">New Value</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -139,23 +140,17 @@
                 </tbody>
             </table>
             
-            <div th:if="${changes.passwordChanged}" class="info-box" style="border-right-color: #dc3545; background-color: #fff3cd;">
-                <p style="color: #856404; margin: 0;">
-                    <strong>⚠️ توجه:</strong> رمز عبور شما توسط مدیر سیستم تغییر کرده است. 
-                    به دلایل امنیتی، لطفاً از طریق <a th:href="@{|${baseUrl}/forgot-password|}" style="color: #dc3545;">فراموشی رمز عبور</a> 
-                    اقدام به تعیین رمز عبور جدید نمایید.
-                </p>
-            </div>
-            
-            <p>در صورت بروز هرگونه مشکل یا سوال، لطفاً با پشتیبانی تماس بگیرید.</p>
+            <p th:text="#{mail.user.update.login.message}">You can log in using your updated credentials.</p>
             
             <p style="text-align: center;">
-                <a th:href="@{|${baseUrl}/login|}" class="button">ورود به سیستم</a>
+                <a th:href="@{|${baseUrl}/login|}" class="button" th:text="#{mail.user.update.login.button}">Login to System</a>
             </p>
+            
+            <p th:text="#{mail.user.update.support.message}">If you did not make these changes, please contact support immediately.</p>
         </div>
         <div class="footer">
-            <p>این ایمیل به صورت خودکار ارسال شده است. لطفاً به آن پاسخ ندهید.</p>
-            <p th:text="${applicationTitle}">سیستم مدیریت آزمون آنلاین</p>
+            <p th:text="#{mail.user.update.footer.auto}">This email was sent automatically. Please do not reply.</p>
+            <p th:text="${applicationTitle}">Online Exam Management System</p>
         </div>
     </div>
 </body>

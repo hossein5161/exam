@@ -7,13 +7,20 @@ import ir.maktabsharif.onlineexam.service.UserService;
 import ir.maktabsharif.onlineexam.util.PasswordValidationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Controller
 @RequiredArgsConstructor
@@ -23,6 +30,8 @@ public class AdminController {
 
     private final UserService userService;
     private final EmailService emailService;
+    private final MessageSource messageSource;
+    private final UserDetailsService userDetailsService;
 
     @GetMapping("/users")
     public String usersPage(@RequestParam(required = false) String roleName,
@@ -56,17 +65,20 @@ public class AdminController {
 
     @PostMapping("/users/{id}/approve")
     public String approveUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
             User user = userService.approveUser(id);
-            redirectAttributes.addFlashAttribute("success", "کاربر با موفقیت تایید شد و ایمیل ارسال شد");
+            String successMessage = messageSource.getMessage("users.approve.success.email", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
 
             try {
-                emailService.sendUserApprovalEmail(user);
+                emailService.sendUserApprovalEmail(user, locale);
                 log.info("Approval email sent to user {}", user.getEmail());
             } catch (Exception e) {
                 log.error("Error sending email to {}", user.getEmail(), e);
-                redirectAttributes.addFlashAttribute("warning", 
-                    "کاربر تایید شد اما خطا در ارسال ایمیل: " + e.getMessage());
+                String warningMessage = messageSource.getMessage("users.approve.success.email.error", 
+                    new Object[]{e.getMessage()}, locale);
+                redirectAttributes.addFlashAttribute("warning", warningMessage);
             }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -84,30 +96,64 @@ public class AdminController {
     @PostMapping("/users/{id}/edit")
     public String updateUser(@PathVariable Long id,
                             @ModelAttribute User user,
-                            @RequestParam(required = false) String roleName,
+                            @RequestParam(required = false) String[] roleNames,
                             @RequestParam(required = false) String password,
-                            RedirectAttributes redirectAttributes) {
+                            RedirectAttributes redirectAttributes,
+                            jakarta.servlet.http.HttpSession session) {
         try {
+            Locale locale = LocaleContextHolder.getLocale();
             User userBeforeUpdate = userService.findById(id);
-            String oldRoleName = userBeforeUpdate.getRoles().stream()
-                    .findFirst()
+            String notAssigned = messageSource.getMessage("common.not.assigned", null, locale);
+            
+            String oldRolesStr = userBeforeUpdate.getRoles().stream()
                     .map(Role::getPersianName)
-                    .orElse("تعیین نشده");
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse(notAssigned);
 
-            String newRoleName = null;
-            if (roleName != null && !roleName.isEmpty()) {
-                userService.changeUserRole(id, "ROLE_" + roleName.toUpperCase());
-                User userAfterRoleChange = userService.findById(id);
-                newRoleName = userAfterRoleChange.getRoles().stream()
-                        .findFirst()
-                        .map(Role::getPersianName)
-                        .orElse("تعیین نشده");
+            String newRolesStr = null;
+            if (roleNames != null && roleNames.length > 0) {
+                List<String> roleNameList = new ArrayList<>();
+                for (String roleName : roleNames) {
+                    if (roleName != null && !roleName.isEmpty()) {
+                        roleNameList.add("ROLE_" + roleName.toUpperCase());
+                    }
+                }
+                if (!roleNameList.isEmpty()) {
+                    userService.changeUserRoles(id, roleNameList);
+                    User userAfterRoleChange = userService.findById(id);
+                    newRolesStr = userAfterRoleChange.getRoles().stream()
+                            .map(Role::getPersianName)
+                            .reduce((a, b) -> a + ", " + b)
+                            .orElse(notAssigned);
+                    
+                    Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
+                    if (currentAuth != null && currentAuth.getName().equals(userAfterRoleChange.getUsername())) {
+                        UserDetails updatedUserDetails = userDetailsService.loadUserByUsername(userAfterRoleChange.getUsername());
+                        Authentication newAuth = new UsernamePasswordAuthenticationToken(
+                                updatedUserDetails,
+                                currentAuth.getCredentials(),
+                                updatedUserDetails.getAuthorities()
+                        );
+                        SecurityContextHolder.getContext().setAuthentication(newAuth);
+                        updatedUserDetails.getAuthorities().stream().findFirst().ifPresent(authority -> {
+                            String roleNamePlain = authority.getAuthority().startsWith("ROLE_")
+                                    ? authority.getAuthority().substring(5)
+                                    : authority.getAuthority();
+                            session.setAttribute("selectedRole", roleNamePlain);
+                        });
+                        log.info("Authentication refreshed for user {} after role change", userAfterRoleChange.getUsername());
+                    }
+                }
             }
 
             user.setRoles(null);
             
             if (password != null && !password.isEmpty()) {
-                String passwordError = PasswordValidationUtil.validateOptional(password);
+                String passwordError = PasswordValidationUtil.validateOptional(
+                    password, 
+                    messageSource, 
+                    LocaleContextHolder.getLocale()
+                );
                 if (passwordError != null) {
                     redirectAttributes.addFlashAttribute("error", passwordError);
                     return "redirect:/admin/users/" + id + "/edit";
@@ -117,27 +163,40 @@ public class AdminController {
 
             var changes = userService.updateUserWithChanges(id, user);
 
-            if (newRoleName != null && !newRoleName.equals(oldRoleName)) {
-                changes.addChange("نقش", oldRoleName, newRoleName);
+            if (newRolesStr != null && !newRolesStr.equals(oldRolesStr)) {
+                String roleLabel = messageSource.getMessage("common.roles", null, locale);
+                changes.addChange(roleLabel, oldRolesStr, newRolesStr);
             }
 
             if (changes.hasChanges()) {
                 try {
                     User updatedUser = userService.findById(id);
-                    emailService.sendUserUpdateEmail(updatedUser, changes);
+                    emailService.sendUserUpdateEmail(updatedUser, changes, locale);
                     log.info("Update email sent to user {}", updatedUser.getEmail());
                 } catch (Exception e) {
                     User updatedUser = userService.findById(id);
                     log.error("Error sending update email to {}", updatedUser.getEmail(), e);
-                    redirectAttributes.addFlashAttribute("warning", 
-                        "اطلاعات کاربر به‌روزرسانی شد اما خطا در ارسال ایمیل: " + e.getMessage());
+                    String warningMessage = messageSource.getMessage("users.update.success.email.error", 
+                        new Object[]{e.getMessage()}, locale);
+                    redirectAttributes.addFlashAttribute("warning", warningMessage);
                 }
             }
 
-            redirectAttributes.addFlashAttribute("success", "اطلاعات کاربر با موفقیت به‌روزرسانی شد");
+            String successMessage = messageSource.getMessage("users.update.success", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
         } catch (Exception e) {
             log.error("An error occurred while updating the user", e);
-            redirectAttributes.addFlashAttribute("error", "خطا در به‌روزرسانی: " + e.getMessage());
+            Locale locale = LocaleContextHolder.getLocale();
+            String errorMessage = messageSource.getMessage("users.update.error", 
+                new Object[]{e.getMessage()}, locale);
+            redirectAttributes.addFlashAttribute("error", errorMessage);
+        }
+        Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isCurrentUser = currentAuth != null && currentAuth.getName().equals(user.getUsername());
+        boolean isAdminNow = currentAuth != null && currentAuth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (isCurrentUser && !isAdminNow) {
+            return "redirect:/dashboard";
         }
         return "redirect:/admin/users";
     }
@@ -146,9 +205,11 @@ public class AdminController {
     public String changeUserRole(@PathVariable Long id,
                                 @RequestParam String roleName,
                                 RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
             userService.changeUserRole(id, "ROLE_" + roleName.toUpperCase());
-            redirectAttributes.addFlashAttribute("success", "نقش کاربر با موفقیت تغییر کرد");
+            String successMessage = messageSource.getMessage("users.role.change.success", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
@@ -166,22 +227,26 @@ public class AdminController {
     public String rejectUser(@PathVariable Long id,
                             @RequestParam String rejectionReason,
                             RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
             if (rejectionReason == null || rejectionReason.trim().isEmpty()) {
-                redirectAttributes.addFlashAttribute("error", "لطفاً دلیل رد شدن را وارد کنید");
+                String errorMessage = messageSource.getMessage("users.reject.reason.required", null, locale);
+                redirectAttributes.addFlashAttribute("error", errorMessage);
                 return "redirect:/admin/users/" + id + "/reject";
             }
             
             User user = userService.rejectUser(id, rejectionReason.trim());
-            redirectAttributes.addFlashAttribute("success", "کاربر با موفقیت رد شد و ایمیل ارسال شد");
+            String successMessage = messageSource.getMessage("users.reject.success.email", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
 
             try {
-                emailService.sendUserRejectionEmail(user, rejectionReason.trim());
+                emailService.sendUserRejectionEmail(user, rejectionReason.trim(), locale);
                 log.info("Rejection email sent to user {}", user.getEmail());
             } catch (Exception e) {
                 log.error("Error while sending rejection email to {}", user.getEmail(), e);
-                redirectAttributes.addFlashAttribute("warning", 
-                    "کاربر رد شد اما خطا در ارسال ایمیل: " + e.getMessage());
+                String warningMessage = messageSource.getMessage("users.reject.success.email.error", 
+                    new Object[]{e.getMessage()}, locale);
+                redirectAttributes.addFlashAttribute("warning", warningMessage);
             }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -189,19 +254,52 @@ public class AdminController {
         return "redirect:/admin/users";
     }
 
+    @GetMapping("/users/{id}/delete")
+    public String deleteUserPage(@PathVariable Long id, Model model) {
+        User user = userService.findById(id);
+        model.addAttribute("user", user);
+        return "admin/delete_user";
+    }
+
     @PostMapping("/users/{id}/delete")
-    public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String deleteUser(@PathVariable Long id,
+                            @RequestParam String deletionReason,
+                            RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String currentUsername = authentication.getName();
             User currentUser = userService.findByUsername(currentUsername);
 
             if (currentUser.getId().equals(id)) {
-                redirectAttributes.addFlashAttribute("error", "شما نمی‌توانید خودتان را حذف کنید");
+                String errorMessage = messageSource.getMessage("users.delete.error.cannot.delete.self", null, locale);
+                redirectAttributes.addFlashAttribute("error", errorMessage);
                 return "redirect:/admin/users";
             }
+
+            if (deletionReason == null || deletionReason.trim().isEmpty()) {
+                String errorMessage = messageSource.getMessage("users.delete.reason.required", null, locale);
+                redirectAttributes.addFlashAttribute("error", errorMessage);
+                return "redirect:/admin/users/" + id + "/delete";
+            }
+
+            User userToDelete = userService.findById(id);
+            String userEmail = userToDelete.getEmail();
+
+            try {
+                emailService.sendUserDeletionEmail(userToDelete, deletionReason.trim(), locale);
+                log.info("Deletion email sent to user {}", userEmail);
+            } catch (Exception e) {
+                log.error("Error sending deletion email to {}", userEmail, e);
+                String warningMessage = messageSource.getMessage("users.delete.email.error", 
+                    new Object[]{e.getMessage()}, locale);
+                redirectAttributes.addFlashAttribute("warning", warningMessage);
+                return "redirect:/admin/users/" + id + "/delete";
+            }
+
             userService.deleteUser(id, currentUser.getId());
-            redirectAttributes.addFlashAttribute("success", "کاربر با موفقیت حذف شد");
+            String successMessage = messageSource.getMessage("users.delete.success.email", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }

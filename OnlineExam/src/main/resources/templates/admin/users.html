@@ -1,31 +1,35 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" dir="rtl" lang="fa">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:with="currentLang=${#locale != null ? #locale.language : 'en'}"
+      th:attr="dir=${currentLang == 'fa' ? 'rtl' : 'ltr'}, lang=${currentLang}">
 <head>
     <meta charset="UTF-8">
-    <title>مدیریت کاربران</title>
+    <title th:text="#{users.title}">User Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            direction: rtl;
-            text-align: right;
+            text-align: start;
         }
     </style>
 </head>
 <body>
+    <div style="position: fixed; top: 15px; right: 15px; z-index: 1100;">
+        <div th:replace="~{fragments/language-selector :: language-selector}"></div>
+    </div>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">سیستم مدیریت آزمون آنلاین</a>
+            <a class="navbar-brand" href="#" th:text="#{application.title}">Online Exam Management System</a>
             <div class="navbar-nav me-auto">
-                <a class="nav-link" th:href="@{/dashboard}">داشبورد</a>
+                <a class="nav-link" th:href="@{/dashboard}" th:text="#{common.dashboard}">Dashboard</a>
                 <form th:action="@{/logout}" method="post" class="d-inline me-2">
-                    <button type="submit" class="btn btn-outline-light">خروج</button>
+                    <button type="submit" class="btn btn-outline-light" th:text="#{common.logout}">Logout</button>
                 </form>
             </div>
         </div>
     </nav>
     
     <div class="container mt-4">
-        <h2>مدیریت کاربران</h2>
+        <h2 th:text="#{users.title}">User Management</h2>
         
         <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
             <span th:text="${success}"></span>
@@ -38,58 +42,58 @@
         </div>
         
         <div class="card mb-4">
-            <div class="card-header">جستجو و فیلتر</div>
+            <div class="card-header" th:text="#{users.filter.title}">Filter & Search</div>
             <div class="card-body">
                 <form th:action="@{/admin/users}" method="get">
                     <div class="row">
                         <div class="col-md-3">
-                            <label class="form-label">نقش</label>
+                            <label class="form-label" th:text="#{users.role}">Role</label>
                             <select class="form-select" name="roleName">
-                                <option value="">همه</option>
-                                <option value="ROLE_ADMIN" th:selected="${roleName == 'ROLE_ADMIN'}">مدیر</option>
-                                <option value="ROLE_TEACHER" th:selected="${roleName == 'ROLE_TEACHER'}">استاد</option>
-                                <option value="ROLE_STUDENT" th:selected="${roleName == 'ROLE_STUDENT'}">دانشجو</option>
+                                <option value="" th:text="#{common.all}">All</option>
+                                <option value="ROLE_ADMIN" th:selected="${roleName == 'ROLE_ADMIN'}" th:text="#{users.role.admin}">Admin</option>
+                                <option value="ROLE_TEACHER" th:selected="${roleName == 'ROLE_TEACHER'}" th:text="#{users.role.teacher}">Teacher</option>
+                                <option value="ROLE_STUDENT" th:selected="${roleName == 'ROLE_STUDENT'}" th:text="#{users.role.student}">Student</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">نام</label>
+                            <label class="form-label" th:text="#{users.firstName}">First Name</label>
                             <input type="text" class="form-control" name="firstName" th:value="${firstName}">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">نام خانوادگی</label>
+                            <label class="form-label" th:text="#{users.lastName}">Last Name</label>
                             <input type="text" class="form-control" name="lastName" th:value="${lastName}">
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">وضعیت</label>
+                            <label class="form-label" th:text="#{users.status}">Status</label>
                             <select class="form-select" name="status">
-                                <option value="">همه</option>
-                                <option value="PENDING" th:selected="${status == 'PENDING'}">در انتظار تایید</option>
-                                <option value="APPROVED" th:selected="${status == 'APPROVED'}">تایید شده</option>
-                                <option value="REJECTED" th:selected="${status == 'REJECTED'}">رد شده</option>
+                                <option value="" th:text="#{common.all}">All</option>
+                                <option value="PENDING" th:selected="${status == 'PENDING'}" th:text="#{users.pending}">Pending</option>
+                                <option value="APPROVED" th:selected="${status == 'APPROVED'}" th:text="#{users.approved}">Approved</option>
+                                <option value="REJECTED" th:selected="${status == 'REJECTED'}" th:text="#{users.rejected}">Rejected</option>
                             </select>
                         </div>
                     </div>
                     <div class="mt-3">
-                        <button type="submit" class="btn btn-primary">جستجو</button>
-                        <a th:href="@{/admin/users}" class="btn btn-secondary">پاک کردن فیلتر</a>
+                        <button type="submit" class="btn btn-primary" th:text="#{common.search}">Search</button>
+                        <a th:href="@{/admin/users}" class="btn btn-secondary" th:text="#{common.clearFilters}">Clear Filters</a>
                     </div>
                 </form>
             </div>
         </div>
         
         <div class="card">
-            <div class="card-header">لیست کاربران</div>
+            <div class="card-header" th:text="#{users.list}">User List</div>
             <div class="card-body">
                 <table class="table table-striped">
                     <thead>
                         <tr>
-                            <th>نام کاربری</th>
-                            <th>نام</th>
-                            <th>نام خانوادگی</th>
-                            <th>ایمیل</th>
-                            <th>نقش</th>
-                            <th>وضعیت</th>
-                            <th>عملیات</th>
+                            <th th:text="#{users.username}">Username</th>
+                            <th th:text="#{users.firstName}">First Name</th>
+                            <th th:text="#{users.lastName}">Last Name</th>
+                            <th th:text="#{users.email}">Email</th>
+                            <th th:text="#{users.role}">Role</th>
+                            <th th:text="#{users.status}">Status</th>
+                            <th th:text="#{common.actions}">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -99,36 +103,35 @@
                             <td th:text="${user.lastName}"></td>
                             <td th:text="${user.email}"></td>
                             <td>
-                                <span th:each="role : ${user.roles}" class="badge bg-primary ms-1" th:text="${role.persianName}"></span>
+                                <span th:each="role : ${user.roles}" class="badge bg-primary ms-1"
+                                      th:text="${role.name == 'ROLE_ADMIN'} ? #{users.role.admin} : (${role.name == 'ROLE_TEACHER'} ? #{users.role.teacher} : #{users.role.student})"></span>
                             </td>
                             <td>
-                                <span th:if="${user.status != null and user.status.name() == 'PENDING'}" 
-                                      class="badge bg-warning">در انتظار تایید</span>
-                                <span th:if="${user.status != null and user.status.name() == 'APPROVED'}" 
-                                      class="badge bg-success">تایید شده</span>
-                                <span th:if="${user.status != null and user.status.name() == 'REJECTED'}" 
-                                      class="badge bg-danger">رد شده</span>
-                                <div th:if="${user.status != null and user.status.name() == 'REJECTED' and user.rejectionReason != null}" 
+                                <span th:if="${user.status != null and user.status.name() == 'PENDING'}"
+                                      class="badge bg-warning" th:text="#{users.pending}">Pending</span>
+                                <span th:if="${user.status != null and user.status.name() == 'APPROVED'}"
+                                      class="badge bg-success" th:text="#{users.approved}">Approved</span>
+                                <span th:if="${user.status != null and user.status.name() == 'REJECTED'}"
+                                      class="badge bg-danger" th:text="#{users.rejected}">Rejected</span>
+                                <div th:if="${user.status != null and user.status.name() == 'REJECTED' and user.rejectionReason != null}"
                                      class="mt-1">
                                     <small class="text-muted" style="display: block;">
-                                        <strong>دلیل:</strong> <span th:text="${user.rejectionReason}"></span>
+                                        <strong th:text="#{users.reject.reason}">Reason:</strong> <span th:text="${user.rejectionReason}"></span>
                                     </small>
                                 </div>
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
-                                    <a th:href="@{/admin/users/{id}/edit(id=${user.id})}" class="btn btn-sm btn-primary">ویرایش</a>
-                                    <form th:action="@{/admin/users/{id}/approve(id=${user.id})}" method="post" class="d-inline" 
+                                    <a th:href="@{/admin/users/{id}/edit(id=${user.id})}" class="btn btn-sm btn-primary" th:text="#{common.edit}">Edit</a>
+                                    <form th:action="@{/admin/users/{id}/approve(id=${user.id})}" method="post" class="d-inline"
                                           th:if="${user.status != null and user.status.name() == 'PENDING'}">
-                                        <button type="submit" class="btn btn-sm btn-success">تایید</button>
+                                        <button type="submit" class="btn btn-sm btn-success" th:text="#{users.approve}">Approve</button>
                                     </form>
-                                    <a th:href="@{/admin/users/{id}/reject(id=${user.id})}" 
+                                    <a th:href="@{/admin/users/{id}/reject(id=${user.id})}"
                                        class="btn btn-sm btn-danger"
-                                       th:if="${user.status != null and user.status.name() == 'PENDING'}">رد</a>
-                                    <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post" class="d-inline"
-                                          onsubmit="return confirm('آیا از حذف این کاربر اطمینان دارید؟');">
-                                        <button type="submit" class="btn btn-sm btn-danger">حذف</button>
-                                    </form>
+                                       th:if="${user.status != null and user.status.name() == 'PENDING'}" th:text="#{users.reject}">Reject</a>
+                                    <a th:href="@{/admin/users/{id}/delete(id=${user.id})}"
+                                       class="btn btn-sm btn-danger" th:text="#{common.delete}">Delete</a>
                                 </div>
                             </td>
                         </tr>
@@ -141,4 +144,3 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-

@@ -21,7 +21,7 @@ public class PasswordValidator implements ConstraintValidator<ValidPassword, Str
 
         if (!password.equals(password.trim())) {
             context.disableDefaultConstraintViolation();
-            context.buildConstraintViolationWithTemplate("رمز عبور نباید فاصله در ابتدا یا انتها داشته باشد")
+            context.buildConstraintViolationWithTemplate("{validation.password.trim}")
                    .addConstraintViolation();
             return false;
         }

@@ -7,10 +7,13 @@ import ir.maktabsharif.onlineexam.repository.RoleRepository;
 import ir.maktabsharif.onlineexam.repository.UserRepository;
 import ir.maktabsharif.onlineexam.service.CourseService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +22,7 @@ public class CourseServiceImpl implements CourseService {
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final MessageSource messageSource;
 
     @Override
     @Transactional
@@ -77,17 +81,34 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional
     public Course assignTeacherToCourse(Long courseId, Long teacherId) {
+        Locale locale = LocaleContextHolder.getLocale();
         Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Course not found"));
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("error.course.not.found", null, locale);
+                    return new RuntimeException(message);
+                });
 
         User teacher = userRepository.findById(teacherId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("error.user.not.found", null, locale);
+                    return new RuntimeException(message);
+                });
 
         Role teacherRole = roleRepository.findByName("ROLE_TEACHER")
-                .orElseThrow(() -> new RuntimeException("Teacher role not found"));
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("error.role.teacher.not.found", null, locale);
+                    return new RuntimeException(message);
+                });
 
         if (!teacher.getRoles().contains(teacherRole)) {
-            throw new RuntimeException("User is not a teacher");
+            String message = messageSource.getMessage("courses.assign.teacher.error.not.teacher", null, locale);
+            throw new RuntimeException(message);
+        }
+
+        if (course.getStudents().contains(teacher)) {
+            String message = messageSource.getMessage("courses.assign.teacher.error.already.student", 
+                new Object[]{teacher.getFirstName() + " " + teacher.getLastName(), course.getTitle()}, locale);
+            throw new RuntimeException(message);
         }
 
         course.setTeacher(teacher);
@@ -97,17 +118,34 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional
     public Course addStudentToCourse(Long courseId, Long studentId) {
+        Locale locale = LocaleContextHolder.getLocale();
         Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Course not found"));
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("error.course.not.found", null, locale);
+                    return new RuntimeException(message);
+                });
 
         User student = userRepository.findById(studentId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("error.user.not.found", null, locale);
+                    return new RuntimeException(message);
+                });
 
         Role studentRole = roleRepository.findByName("ROLE_STUDENT")
-                .orElseThrow(() -> new RuntimeException("Student role not found"));
+                .orElseThrow(() -> {
+                    String message = messageSource.getMessage("error.role.student.not.found", null, locale);
+                    return new RuntimeException(message);
+                });
 
         if (!student.getRoles().contains(studentRole)) {
-            throw new RuntimeException("User is not a student");
+            String message = messageSource.getMessage("courses.add.student.error.not.student", null, locale);
+            throw new RuntimeException(message);
+        }
+
+        if (course.getTeacher() != null && course.getTeacher().getId().equals(student.getId())) {
+            String message = messageSource.getMessage("courses.add.student.error.already.teacher", 
+                new Object[]{student.getFirstName() + " " + student.getLastName(), course.getTitle()}, locale);
+            throw new RuntimeException(message);
         }
 
         if (!course.getStudents().contains(student)) {

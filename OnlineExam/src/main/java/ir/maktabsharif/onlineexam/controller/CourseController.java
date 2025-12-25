@@ -7,11 +7,14 @@ import ir.maktabsharif.onlineexam.repository.RoleRepository;
 import ir.maktabsharif.onlineexam.repository.UserRepository;
 import ir.maktabsharif.onlineexam.service.CourseService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.List;
+import java.util.Locale;
 
 @Controller
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class CourseController {
     private final CourseService courseService;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final MessageSource messageSource;
 
     @GetMapping
     public String coursesPage(Model model) {
@@ -37,9 +41,11 @@ public class CourseController {
 
     @PostMapping
     public String createCourse(@ModelAttribute Course course, RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
             courseService.createCourse(course);
-            redirectAttributes.addFlashAttribute("success", "دوره با موفقیت ایجاد شد");
+            String successMessage = messageSource.getMessage("courses.create.success", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
@@ -57,9 +63,11 @@ public class CourseController {
     public String updateCourse(@PathVariable Long id,
                               @ModelAttribute Course course,
                               RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
             courseService.updateCourse(id, course);
-            redirectAttributes.addFlashAttribute("success", "دوره با موفقیت به‌روزرسانی شد");
+            String successMessage = messageSource.getMessage("courses.update.success", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
@@ -68,9 +76,11 @@ public class CourseController {
 
     @PostMapping("/{id}/delete")
     public String deleteCourse(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
             courseService.deleteCourse(id);
-            redirectAttributes.addFlashAttribute("success", "دوره با موفقیت حذف شد");
+            String successMessage = messageSource.getMessage("courses.delete.success", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
@@ -93,9 +103,11 @@ public class CourseController {
     public String assignTeacher(@PathVariable Long id,
                                @RequestParam Long teacherId,
                                RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
             courseService.assignTeacherToCourse(id, teacherId);
-            redirectAttributes.addFlashAttribute("success", "استاد با موفقیت به دوره اضافه شد");
+            String successMessage = messageSource.getMessage("courses.assign.teacher.success", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
@@ -122,9 +134,11 @@ public class CourseController {
     public String addStudent(@PathVariable Long id,
                             @RequestParam Long studentId,
                             RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
             courseService.addStudentToCourse(id, studentId);
-            redirectAttributes.addFlashAttribute("success", "دانشجو با موفقیت به دوره اضافه شد");
+            String successMessage = messageSource.getMessage("courses.add.student.success", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
@@ -152,9 +166,11 @@ public class CourseController {
     public String removeStudent(@PathVariable Long id,
                                @RequestParam Long studentId,
                                RedirectAttributes redirectAttributes) {
+        Locale locale = LocaleContextHolder.getLocale();
         try {
             courseService.removeStudentFromCourse(id, studentId);
-            redirectAttributes.addFlashAttribute("success", "دانشجو با موفقیت از دوره حذف شد");
+            String successMessage = messageSource.getMessage("courses.remove.student.success", null, locale);
+            redirectAttributes.addFlashAttribute("success", successMessage);
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }

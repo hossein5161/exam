@@ -16,5 +16,9 @@ public interface UserService {
     User findById(Long id);
     User findByUsername(String username);
     void deleteUser(Long userId, Long currentUserId);
+    User changeUserRoles(Long userId, List<String> roleNames);
+    User addRoleToExistingUser(String usernameOrEmail, String password, String roleName);
+
+
 }
 
